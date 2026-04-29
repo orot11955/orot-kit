@@ -154,6 +154,7 @@ func TestInstallServerPageAssetsAndMacLinuxStats(t *testing.T) {
 	for _, want := range []string{
 		"orot-kit",
 		"curl -fsSL http://kit.local/install.sh | sh",
+		"curl -fsSL http://kit.local/uninstall.sh | sh",
 		"/assets/orot.png",
 		"/assets/mac.png",
 		"/assets/linux.png",
@@ -161,6 +162,7 @@ func TestInstallServerPageAssetsAndMacLinuxStats(t *testing.T) {
 		"supported-os-list",
 		"macOS",
 		"Linux",
+		"kit uninstall --dry-run",
 		"kit git diff",
 		"kit runtime serve",
 		"make serve",
@@ -286,6 +288,31 @@ func TestInstallScriptDoesNotCountAsDownload(t *testing.T) {
 	}
 }
 
+func TestUninstallScript(t *testing.T) {
+	handler := NewServerWithConfig(Config{BaseURL: "http://kit.local"})
+	response := request(handler, "/uninstall.sh")
+	if response.Code != http.StatusOK {
+		t.Fatalf("uninstall script status = %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"$HOME/.kit", "$HOME/.kit-server", "command -v kit", "Uninstall complete."} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("uninstall script missing %q: %s", want, body)
+		}
+	}
+
+	statsResponse := request(handler, "/stats")
+	var stats struct {
+		Downloads DownloadStats `json:"downloads"`
+	}
+	if err := json.NewDecoder(statsResponse.Body).Decode(&stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Downloads.Total != 0 || len(stats.Downloads.ByPath) != 0 {
+		t.Fatalf("uninstall script should not count as download: %#v", stats.Downloads)
+	}
+}
+
 func TestInstallServerUsesForwardedURL(t *testing.T) {
 	root := t.TempDir()
 	binDir := filepath.Join(root, "dist")
@@ -328,6 +355,9 @@ func TestInstallServerUsesForwardedURL(t *testing.T) {
 	}
 	if versionBody["base_url"] != "https://downloads.orot.dev" {
 		t.Fatalf("version base_url = %#v", versionBody["base_url"])
+	}
+	if versionBody["uninstall_url"] != "https://downloads.orot.dev/uninstall.sh" {
+		t.Fatalf("version uninstall_url = %#v", versionBody["uninstall_url"])
 	}
 	binaries, ok := versionBody["binaries"].([]any)
 	if !ok || len(binaries) != 1 {

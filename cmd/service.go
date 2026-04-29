@@ -468,7 +468,7 @@ func rootCommandExists(root *cobra.Command, name string) bool {
 
 func reservedRootCommand(name string) bool {
 	switch name {
-	case "docker", "ssh", "send", "receive", "sync", "service", "git", "runtime", "node", "go", "python", "java", "secret", "fw", "install-server", "diff":
+	case "docker", "ssh", "send", "receive", "sync", "service", "git", "runtime", "node", "go", "python", "java", "secret", "fw", "install-server", "uninstall", "diff":
 		return true
 	default:
 		return false

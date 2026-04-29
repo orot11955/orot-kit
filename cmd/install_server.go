@@ -32,7 +32,7 @@ func registerInstallServerCommands(root *cobra.Command) {
 					Title:   "Install Server",
 					Command: []string{"kit install-server --addr " + addr + " --bin-dir " + config.BinDir + " --runtime-cache-dir " + config.RuntimeCacheDir + " --assets-dir " + config.AssetsDir + " --stats-file " + config.StatsFile + " --base-url " + config.BaseURL},
 					Summary: "Dry run: HTTP server was not started.",
-					Hint:    []string{"curl " + baseURL + "/healthz", "curl " + baseURL + "/version", "curl -fsSL " + baseURL + "/install.sh | sh"},
+					Hint:    []string{"curl " + baseURL + "/healthz", "curl " + baseURL + "/version", "curl -fsSL " + baseURL + "/install.sh | sh", "curl -fsSL " + baseURL + "/uninstall.sh | sh"},
 				})
 			}
 			cmd.Printf("Title\n  Install Server\n\nResult\n  Listening on %s\n  Base URL: %s\n  Binaries: %s\n  Runtime Cache: %s\n  Assets: %s\n  Stats: %s\n\n", addr, baseURL, config.BinDir, config.RuntimeCacheDir, config.AssetsDir, config.StatsFile)

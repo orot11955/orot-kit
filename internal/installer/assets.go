@@ -30,6 +30,7 @@ func renderPage(data PageData) string {
 	baseURL := html.EscapeString(data.BaseURL)
 	install := html.EscapeString(data.InstallCommand)
 	installAlt := html.EscapeString("curl -fsSL " + data.BaseURL + "/install.sh | KIT_INSTALL_DIR=~/bin sh")
+	uninstall := html.EscapeString("curl -fsSL " + data.BaseURL + "/uninstall.sh | sh")
 	macCount := strconv.FormatInt(data.Stats.Mac, 10)
 	linuxCount := strconv.FormatInt(data.Stats.Linux, 10)
 	versionText := html.EscapeString(version.Version)
@@ -594,6 +595,7 @@ func renderPage(data PageData) string {
         <nav>
           <div class="sidebar-section-title">시작하기</div>
           <a href="#install">설치</a>
+          <a href="#uninstall">제거</a>
           <a href="#quickstart">빠른 시작</a>
 
           <div class="sidebar-section-title">기능</div>
@@ -644,6 +646,17 @@ func renderPage(data PageData) string {
           <span class="supported-os-name">Linux</span>
           <span class="supported-os-arch">arm64, amd64</span>
         </div>
+      </div>
+
+      <h2 id="uninstall">제거</h2>
+      <p>설치된 <code>kit</code> 바이너리와 <code>~/.kit</code>, <code>~/.kit-server</code> 상태 파일을 함께 정리한다.</p>
+      <div class="install-box">
+        <span class="prompt">$</span>
+        <span class="cmd">` + uninstall + `</span>
+      </div>
+      <div class="install-alt">
+        CLI에서 먼저 확인 &nbsp;→&nbsp;
+        <code>kit uninstall --dry-run</code>
       </div>
 
       <h2 id="quickstart">빠른 시작</h2>
@@ -881,6 +894,10 @@ make serve-stop</code></pre>
               <td>OS와 아키텍처를 감지하는 설치 스크립트</td>
             </tr>
             <tr>
+              <td><a href="/uninstall.sh"><code>/uninstall.sh</code></a></td>
+              <td>kit 바이너리와 로컬 상태 파일을 제거하는 스크립트</td>
+            </tr>
+            <tr>
               <td><a href="/version"><code>/version</code></a></td>
               <td>버전, 빌드 정보, 사용 가능한 바이너리 목록</td>
             </tr>
@@ -898,7 +915,8 @@ make serve-stop</code></pre>
 
       <footer>
         orot-kit &nbsp;·&nbsp; <code>` + baseURL + `</code><br>
-        설치: <code>` + install + `</code>
+        설치: <code>` + install + `</code><br>
+        제거: <code>` + uninstall + `</code>
       </footer>
     </main>
   </div>
@@ -980,6 +998,48 @@ chmod +x "$tmp"
 mv "$tmp" "$install_dir/kit"
 echo "Installed kit to $install_dir/kit"
 echo "Make sure $install_dir is in PATH."
+`
+}
+
+func renderUninstallScript() string {
+	return `#!/usr/bin/env sh
+set -u
+
+install_dir="${KIT_INSTALL_DIR:-$HOME/.local/bin}"
+
+remove_path() {
+  path="$1"
+  kind="$2"
+  if [ -z "$path" ]; then
+    return
+  fi
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    echo "Skipped $kind: $path"
+    return
+  fi
+  if rm -rf "$path" 2>/dev/null; then
+    echo "Removed $kind: $path"
+  else
+    echo "Could not remove $kind: $path" >&2
+  fi
+}
+
+remove_path "${KIT_BIN:-$install_dir/kit}" "binary"
+remove_path "$HOME/.local/bin/kit" "binary"
+remove_path "$HOME/bin/kit" "binary"
+
+if command -v kit >/dev/null 2>&1; then
+  found_kit="$(command -v kit)"
+  case "$found_kit" in
+    */*) remove_path "$found_kit" "binary" ;;
+  esac
+fi
+
+remove_path "$HOME/.kit" "state"
+remove_path "$HOME/.kit-server" "state"
+
+echo "Uninstall complete."
+echo "Remove ~/.kit/shims from PATH in your shell profile if you added it manually."
 `
 }
 

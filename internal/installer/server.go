@@ -59,6 +59,7 @@ func NewServerWithConfig(config Config) http.Handler {
 	mux.HandleFunc("/assets/", server.handleAsset)
 	mux.HandleFunc("/favicon.ico", server.handleFavicon)
 	mux.HandleFunc("/install.sh", server.handleInstallScript)
+	mux.HandleFunc("/uninstall.sh", server.handleUninstallScript)
 	mux.HandleFunc("/version", server.handleVersion)
 	mux.HandleFunc("/healthz", server.handleHealth)
 	mux.HandleFunc("/stats", server.handleStats)
@@ -110,15 +111,22 @@ func (s *Server) handleInstallScript(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(renderInstallScript(s.requestBaseURL(r))))
 }
 
+func (s *Server) handleUninstallScript(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/x-shellscript; charset=utf-8")
+	_, _ = w.Write([]byte(renderUninstallScript()))
+}
+
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 	baseURL := s.requestBaseURL(r)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"version":    version.Version,
-		"commit":     version.Commit,
-		"build_date": version.BuildDate,
-		"base_url":   baseURL,
-		"binaries":   s.binaryMetadata(baseURL),
+		"version":       version.Version,
+		"commit":        version.Commit,
+		"build_date":    version.BuildDate,
+		"base_url":      baseURL,
+		"install_url":   baseURL + "/install.sh",
+		"uninstall_url": baseURL + "/uninstall.sh",
+		"binaries":      s.binaryMetadata(baseURL),
 		"runtime": map[string]string{
 			"base_url": baseURL + "/runtime",
 			"cache":    s.config.RuntimeCacheDir,

@@ -42,6 +42,7 @@ func NewRootCommand() *cobra.Command {
 
 	root.AddCommand(newVersionCommand())
 	root.AddCommand(newInfoCommand())
+	registerUninstallCommand(root)
 	registerFileCommands(root)
 	registerArchiveCommands(root)
 	registerResourceCommands(root)

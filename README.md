@@ -55,6 +55,36 @@ kit download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
 kit download http://localhost:8080/bin/kit-linux-amd64 --output kit --sha256 <sha256>
 ```
 
+## 제거
+
+CLI에서 먼저 삭제 대상을 확인할 수 있습니다.
+
+```bash
+kit uninstall --dry-run
+kit uninstall --yes
+```
+
+기본 제거 대상:
+
+- 현재 실행 중인 `kit` 바이너리
+- `~/.local/bin/kit`
+- `~/bin/kit`
+- `/usr/local/bin/kit`
+- `~/.kit`
+- `~/.kit-server`
+
+설정이나 서버 캐시를 남기려면:
+
+```bash
+kit uninstall --keep-config --keep-server --yes
+```
+
+설치 서버가 떠 있는 경우 원격 스크립트로도 제거할 수 있습니다.
+
+```bash
+curl -fsSL http://localhost:8080/uninstall.sh | sh
+```
+
 ## 빌드
 
 ```bash
@@ -284,6 +314,7 @@ kit install-server \
 | --- | --- |
 | `/` | 명령어 문서와 설치 안내 페이지 |
 | `/install.sh` | OS/Arch를 감지하는 curl 설치 스크립트 |
+| `/uninstall.sh` | kit 바이너리와 로컬 상태 파일을 제거하는 스크립트 |
 | `/bin/<kit binary>` | 배포 바이너리 |
 | `/bin/<kit binary>/checksum` | 바이너리 SHA256 |
 | `/version` | 버전, 빌드 정보, 바이너리 메타데이터 |
@@ -313,6 +344,7 @@ make serve SERVE_ADDR=:8090 SERVE_BASE_URL=http://localhost:8090
 curl -sS http://localhost:8090/healthz
 curl -sS http://localhost:8090/version
 curl -sS http://localhost:8090/install.sh
+curl -sS http://localhost:8090/uninstall.sh
 curl -sS -I http://localhost:8090/bin/kit-linux-amd64
 curl -sS http://localhost:8090/stats
 make serve-stop
@@ -326,5 +358,6 @@ bin/kit --dry-run find nginx --root . --type file
 bin/kit --dry-run archive README.md --format tar.gz --output readme.tar.gz
 bin/kit --dry-run download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
 bin/kit --dry-run node install 22.3.0 --from-server http://localhost:8080/runtime
+bin/kit uninstall --dry-run
 bin/kit runtime cache node 22.3.0
 ```
