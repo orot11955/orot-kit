@@ -650,8 +650,10 @@ func renderPage(data PageData) string {
       <h2 id="uninstall">제거</h2>
       <p>설치된 <code>kit</code> 바이너리와 <code>~/.kit</code>, <code>~/.kit-server</code> 상태 파일을 함께 정리한다.</p>
       <pre><code>kit uninstall         <span class="c"># kit 패키지 제거</span></pre>
+      <div class="install-alt">
         CLI에서 먼저 확인 &nbsp;→&nbsp;
         <code>kit uninstall --dry-run</code>
+      </div>
 
       <h2 id="quickstart">빠른 시작</h2>
       <pre><code>kit --help          <span class="c"># 전체 명령어 목록</span>
