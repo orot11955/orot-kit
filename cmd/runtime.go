@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	stdruntime "runtime"
 	"strings"
 
@@ -242,6 +243,7 @@ func runRuntimeList(cmd *cobra.Command, name string) error {
 	}
 	rows := []string{}
 	for _, runtimeName := range names {
+		current := kitruntime.DetectCurrent(context.Background(), runtimeName)
 		versions, err := manager.Installed(runtimeName)
 		if err != nil {
 			return err
@@ -252,7 +254,7 @@ func runRuntimeList(cmd *cobra.Command, name string) error {
 		}
 		for _, version := range versions {
 			marker := " "
-			if version.Current {
+			if runtimeVersionMatches(runtimeName, current.Version, version.Version) {
 				marker = "*"
 			}
 			rows = append(rows, fmt.Sprintf("%s %s %s  %s", marker, runtimeName, version.Version, version.Path))
@@ -260,7 +262,7 @@ func runRuntimeList(cmd *cobra.Command, name string) error {
 	}
 	return writer(cmd).Write(output.Result{
 		Title:   "Runtime List",
-		Command: []string{"ls ~/.kit/runtimes"},
+		Command: runtimeDetectionCommands(names),
 		Result:  strings.Join(rows, "\n"),
 		Hint:    []string{"kit node available", "kit node use <version>"},
 	})
@@ -493,6 +495,36 @@ func runtimeVersionCommand(name string) string {
 	default:
 		return name + " --version"
 	}
+}
+
+func runtimeDetectionCommands(names []string) []string {
+	commands := make([]string, 0, len(names)*2)
+	for _, name := range names {
+		commands = append(commands, runtimeVersionCommand(name), "which "+name)
+	}
+	return commands
+}
+
+var runtimeVersionPattern = regexp.MustCompile(`(?:go|v)?([0-9]+(?:\.[0-9]+)*(?:[-+][A-Za-z0-9._-]+)?)`)
+
+func runtimeVersionMatches(name string, detected string, installed string) bool {
+	detectedVersion := normalizeRuntimeVersion(detected)
+	installedVersion := normalizeRuntimeVersion(installed)
+	if detectedVersion == "" || installedVersion == "" {
+		return false
+	}
+	if detectedVersion == installedVersion {
+		return true
+	}
+	return name == "java" && strings.HasPrefix(detectedVersion, installedVersion+".")
+}
+
+func normalizeRuntimeVersion(value string) string {
+	matches := runtimeVersionPattern.FindStringSubmatch(strings.TrimSpace(value))
+	if len(matches) < 2 {
+		return ""
+	}
+	return matches[1]
 }
 
 func runtimeInstallCommandString(manager kitruntime.Manager, request kitruntime.InstallRequest) string {

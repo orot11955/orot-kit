@@ -37,3 +37,35 @@ func TestGitDiffCommandRejectsConflictingOptions(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestTopLevelDiffCommandWithSinglePathUsesGitDiff(t *testing.T) {
+	command, summary, usesGit, err := topLevelDiffCommand(4, []string{"README.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !usesGit {
+		t.Fatal("expected single path diff to use git diff")
+	}
+	if got := command.String(); got != "git diff --color=never -U4 -- README.md" {
+		t.Fatalf("command = %q", got)
+	}
+	if summary != "Working tree changes compared to the index." {
+		t.Fatalf("summary = %q", summary)
+	}
+}
+
+func TestTopLevelDiffCommandWithTwoFilesUsesUnifiedDiff(t *testing.T) {
+	command, summary, usesGit, err := topLevelDiffCommand(5, []string{"old.go", "new.go"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if usesGit {
+		t.Fatal("expected two file diff to use unified diff")
+	}
+	if got := command.String(); got != "diff -U 5 old.go new.go" {
+		t.Fatalf("command = %q", got)
+	}
+	if summary != "Unified file comparison. Exit code 1 means files differ." {
+		t.Fatalf("summary = %q", summary)
+	}
+}

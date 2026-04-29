@@ -170,6 +170,7 @@ kit git diff --name-only
 kit git diff --staged
 kit git diff --against main
 kit git diff --base origin/main
+kit diff README.md
 kit diff old.go new.go
 kit diff old.go new.go --context 5
 ```

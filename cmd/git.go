@@ -71,7 +71,7 @@ func runGitStatus(cmd *cobra.Command) error {
 			{Name: "Status", Text: emptyFallback(results[0].Stdout, "Working tree is clean.")},
 			{Name: "Recent Log", Text: emptyFallback(results[1].Stdout, "(no commits)")},
 		},
-		Hint: []string{"kit git position", "kit git diff", "kit diff <file-a> <file-b>"},
+		Hint: []string{"kit git position", "kit git diff", "kit diff <file>"},
 	})
 }
 
@@ -154,27 +154,46 @@ func runGitDiff(cmd *cobra.Command, diffOptions gitDiffOptions, paths []string) 
 func newTopLevelDiffCommand() *cobra.Command {
 	var contextLines int
 	command := &cobra.Command{
-		Use:   "diff <file-a> <file-b>",
-		Short: "Compare two files with unified diff",
-		Args:  cobra.ExactArgs(2),
+		Use:   "diff [path-or-file-a] [file-b]",
+		Short: "Show git changes for a path or compare two files",
+		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !detect.CommandExists("diff") {
-				return writer(cmd).Write(output.Result{Title: "Diff", Summary: "diff command not found."})
+			command, summary, usesGit, err := topLevelDiffCommand(contextLines, args)
+			if err != nil {
+				return err
 			}
-			command := runner.External("diff", "-U", strconv.Itoa(contextLines), args[0], args[1])
 			if opts.dryRun {
 				return writeDryRun(cmd, "Diff", []runner.Command{command}, []string{"kit git diff"})
+			}
+			if usesGit {
+				ok, err := ensureGitRepository(cmd, "Diff")
+				if err != nil || !ok {
+					return err
+				}
+				result := runner.Run(context.Background(), command)
+				return writeRunnerResults(cmd, "Diff", summary, []runner.Result{result}, []string{"kit git diff --stat"})
+			}
+			if !detect.CommandExists("diff") {
+				return writer(cmd).Write(output.Result{Title: "Diff", Summary: "diff command not found."})
 			}
 			result := runner.Run(context.Background(), command)
 			if result.ExitCode == 1 {
 				result.Err = nil
 			}
-			summary := "Unified file comparison. Exit code 1 means files differ."
 			return writeRunnerResults(cmd, "Diff", summary, []runner.Result{result}, []string{"kit git diff"})
 		},
 	}
 	command.Flags().IntVarP(&contextLines, "context", "U", 3, "number of context lines")
 	return command
+}
+
+func topLevelDiffCommand(contextLines int, args []string) (runner.Command, string, bool, error) {
+	if len(args) < 2 {
+		command, summary, err := gitDiffCommand(gitDiffOptions{context: contextLines}, args)
+		return command, summary, true, err
+	}
+	command := runner.External("diff", "-U", strconv.Itoa(contextLines), args[0], args[1])
+	return command, "Unified file comparison. Exit code 1 means files differ.", false, nil
 }
 
 func ensureGitRepository(cmd *cobra.Command, title string) (bool, error) {

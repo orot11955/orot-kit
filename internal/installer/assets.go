@@ -751,7 +751,8 @@ kit git diff --base origin/main</code></pre>
       <p>Git 기능은 저장소를 변경하지 않는 조회 명령에 집중한다.</p>
 
       <h3>파일 간 코드 비교</h3>
-      <pre><code>kit diff old.go new.go
+      <pre><code>kit diff README.md
+kit diff old.go new.go
 kit diff old.go new.go --context 5</code></pre>
 
       <h2 id="runtime">Runtime</h2>
