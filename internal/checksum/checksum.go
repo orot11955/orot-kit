@@ -1,4 +1,4 @@
-package runtime
+package checksum
 
 import (
 	"crypto/sha256"
@@ -9,17 +9,13 @@ import (
 	"strings"
 )
 
-type Checksum struct {
-	Algorithm string
-	Value     string
-}
-
 func FileSHA256(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
+
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
 		return "", err

@@ -79,8 +79,6 @@ func LoadPath(path string) (Config, error) {
 			switch key {
 			case "install_base_url":
 				cfg.Server.InstallBaseURL = value
-			case "runtime_base_url":
-				cfg.Server.RuntimeBaseURL = value
 			}
 			continue
 		}
@@ -140,8 +138,6 @@ func LoadPath(path string) (Config, error) {
 				service.Type = value
 			case "name":
 				service.Name = value
-			case "path":
-				service.Path = value
 			}
 			cfg.Services[currentService] = service
 		}
@@ -172,9 +168,6 @@ func SavePath(path string, cfg Config) error {
 	if cfg.Server.InstallBaseURL != "" {
 		fmt.Fprintf(&builder, "  install_base_url: %s\n", quoteYAMLValue(cfg.Server.InstallBaseURL))
 	}
-	if cfg.Server.RuntimeBaseURL != "" {
-		fmt.Fprintf(&builder, "  runtime_base_url: %s\n", quoteYAMLValue(cfg.Server.RuntimeBaseURL))
-	}
 	builder.WriteString("\n")
 	builder.WriteString("ssh:\n")
 	builder.WriteString("  hosts:\n")
@@ -199,9 +192,6 @@ func SavePath(path string, cfg Config) error {
 		fmt.Fprintf(&builder, "  %s:\n", quoteYAMLKey(name))
 		fmt.Fprintf(&builder, "    type: %s\n", quoteYAMLValue(service.Type))
 		fmt.Fprintf(&builder, "    name: %s\n", quoteYAMLValue(service.Name))
-		if service.Path != "" {
-			fmt.Fprintf(&builder, "    path: %s\n", quoteYAMLValue(service.Path))
-		}
 	}
 	return os.WriteFile(path, []byte(builder.String()), 0o600)
 }

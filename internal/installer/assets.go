@@ -595,8 +595,10 @@ func renderPage(data PageData) string {
         <nav>
           <div class="sidebar-section-title">시작하기</div>
           <a href="#install">설치</a>
+          <a href="#update">업데이트</a>
           <a href="#uninstall">제거</a>
           <a href="#quickstart">빠른 시작</a>
+          <a href="#changes">변경 사항</a>
 
           <div class="sidebar-section-title">기능</div>
           <a href="#files">Files</a>
@@ -604,8 +606,7 @@ func renderPage(data PageData) string {
           <a href="#network">Network</a>
           <a href="#resource">Resource</a>
           <a href="#git">Git & Diff</a>
-          <a href="#runtime">Runtime</a>
-          <a href="#service-docker">Service & Docker</a>
+          <a href="#service">Service</a>
           <a href="#ssh-transfer">SSH & Transfer</a>
           <a href="#firewall">Firewall</a>
           <a href="#secret">Secret</a>
@@ -635,6 +636,12 @@ func renderPage(data PageData) string {
         <code>` + installAlt + `</code>
       </div>
 
+      <h2 id="update">업데이트</h2>
+      <p>설치 서버의 현재 OS/Arch 바이너리로 실행 중인 <code>kit</code>을 교체한다. 업데이트 다운로드는 서버 다운로드 카운트에 포함하지 않는다.</p>
+      <pre><code>kit update                  <span class="c"># 현재 kit 바이너리 업데이트</span>
+kit update --dry-run        <span class="c"># 다운로드 URL과 교체 경로만 확인</span>
+kit update --base-url ` + baseURL + `</code></pre>
+
       <h3>지원 OS</h3>
       <div class="supported-os-list" aria-label="supported operating systems">
         <div class="supported-os-item">
@@ -656,13 +663,14 @@ func renderPage(data PageData) string {
       </div>
 
       <h2 id="quickstart">빠른 시작</h2>
-      <pre><code>kit --help          <span class="c"># 대표 명령어 목록</span>
-kit version         <span class="c"># 빌드 버전 확인</span>
-kit info            <span class="c"># OS, Arch, Go, 설치 경로</span>
-kit resource        <span class="c"># 서버 리소스 요약</span>
-kit network         <span class="c"># 네트워크 요약</span>
-kit git status      <span class="c"># 안전한 Git 상태 확인</span>
-kit runtime current node <span class="c"># 현재 Node 버전 감지</span></code></pre>
+      <pre><code>kit --help            <span class="c"># 대표 명령어 목록</span>
+kit -v                <span class="c"># 빌드 버전 확인</span>
+kit version           <span class="c"># 빌드 버전 확인</span>
+kit update --dry-run  <span class="c"># 업데이트 다운로드 URL 확인</span>
+kit info              <span class="c"># OS, Arch, Go, 설치 경로</span>
+kit resource          <span class="c"># 서버 리소스 요약</span>
+kit network           <span class="c"># 네트워크 요약</span>
+kit git status        <span class="c"># 안전한 Git 상태 확인</span></code></pre>
 
       <h3>출력 형식</h3>
       <pre><code>Title
@@ -673,6 +681,13 @@ Result
   OS: linux
   Arch: amd64</code></pre>
       <p>일반 명령은 제목, 실행 명령, 요약, 결과, 힌트를 같은 구조로 출력한다. 스크립트에서 쓰려면 <code>--json</code>을 붙인다.</p>
+
+      <h2 id="changes">변경 사항</h2>
+      <ul>
+        <li>Runtime Manager 기능과 Node·Go·Python·Java 런타임 단축 명령을 제거했다.</li>
+        <li>Docker 관리 기능을 제거하고 서비스 관리는 systemctl·Homebrew services 중심으로 단순화했다.</li>
+        <li>설치 서버에서 런타임 캐시 API와 runtime-cache-dir 옵션을 제거했다.</li>
+      </ul>
 
       <h2 id="files">Files</h2>
 
@@ -755,39 +770,13 @@ kit git diff --base origin/main</code></pre>
 kit diff old.go new.go
 kit diff old.go new.go --context 5</code></pre>
 
-      <h2 id="runtime">Runtime</h2>
-
-      <h3>Node·Go·Python·Java</h3>
-      <pre><code>kit runtime available
-kit runtime list
-kit runtime current node
-kit runtime cache node 22.3.0
-make serve
-kit runtime serve --addr :8081
-
-kit runtime available node
-kit runtime install node 22.3.0 --from ./node-runtime.tar.gz
-kit runtime install node 22.3.0 --from-server ` + baseURL + `/runtime
-kit runtime use node 22.3.0
-kit runtime remove node 22.3.0</code></pre>
-      <p>런타임은 로컬 아카이브, 디렉터리, 또는 kit runtime server에서 받아 캐시에 설치한다.</p>
-
-      <h2 id="service-docker">Service & Docker</h2>
+      <h2 id="service">Service</h2>
 
       <h3>서비스 alias</h3>
-      <pre><code>kit service add orot --type docker-compose --name web --path /srv/orot
+      <pre><code>kit service add nginx --type systemctl --name nginx
 kit service nginx status
 kit service nginx logs
 kit service nginx restart</code></pre>
-
-      <h3>Docker Compose</h3>
-      <pre><code>kit docker ps
-kit docker ps --compose
-kit docker up web --project-directory /srv/orot
-kit docker logs web --tail 200 --follow
-kit docker restart web
-kit docker down
-kit docker clean --target images</code></pre>
 
       <h2 id="ssh-transfer">SSH & Transfer</h2>
 
@@ -837,6 +826,10 @@ kit secret uuid</code></pre>
           </thead>
           <tbody>
             <tr>
+              <td><code>-v</code>, <code>--version</code></td>
+              <td>루트에서 kit 버전 출력</td>
+            </tr>
+            <tr>
               <td><code>--dry-run</code></td>
               <td>외부 명령을 실행하지 않고 preview만 출력</td>
             </tr>
@@ -880,16 +873,13 @@ kit secret uuid</code></pre>
               <td>버전, 빌드 정보, 사용 가능한 바이너리 목록</td>
             </tr>
             <tr>
-              <td><a href="/runtime"><code>/runtime</code></a></td>
-              <td>런타임 캐시 메타데이터</td>
-            </tr>
-            <tr>
               <td><a href="/stats"><code>/stats</code></a></td>
-              <td>macOS/Linux 다운로드 카운트와 path별 카운트</td>
+              <td>macOS/Linux 다운로드 카운트와 path별 카운트. <code>?update=1</code> 바이너리 다운로드는 제외</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p>런타임 캐시 배포 기능은 제거되어 <code>/runtime</code> 계열 엔드포인트를 제공하지 않는다.</p>
 
       <footer>
         orot-kit &nbsp;·&nbsp; <code>` + baseURL + `</code><br>

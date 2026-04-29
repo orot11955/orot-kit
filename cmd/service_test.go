@@ -6,9 +6,9 @@ import (
 	"github.com/orot-dev/orot-kit/internal/config"
 )
 
-func TestServiceCommandsConfiguredCompose(t *testing.T) {
+func TestServiceCommandsConfiguredSystemctl(t *testing.T) {
 	cfg := config.Default()
-	cfg.Services["orot"] = config.Service{Type: "docker-compose", Name: "web", Path: "/srv/orot"}
+	cfg.Services["orot"] = config.Service{Type: "systemctl", Name: "nginx"}
 	commands, summary, err := serviceCommands("status", "orot", serviceOptions{tail: 50}, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -16,7 +16,7 @@ func TestServiceCommandsConfiguredCompose(t *testing.T) {
 	if len(commands) != 1 {
 		t.Fatalf("command count = %d", len(commands))
 	}
-	if got := commands[0].String(); got != "docker compose --project-directory /srv/orot ps web" {
+	if got := commands[0].String(); got != "systemctl status nginx" {
 		t.Fatalf("command = %q", got)
 	}
 	if summary == "" {

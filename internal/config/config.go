@@ -15,7 +15,6 @@ type OutputConfig struct {
 
 type ServerConfig struct {
 	InstallBaseURL string `json:"install_base_url" yaml:"install_base_url"`
-	RuntimeBaseURL string `json:"runtime_base_url" yaml:"runtime_base_url"`
 }
 
 type SSHConfig struct {
@@ -32,5 +31,4 @@ type SSHHost struct {
 type Service struct {
 	Type string `json:"type" yaml:"type"`
 	Name string `json:"name" yaml:"name"`
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
 }

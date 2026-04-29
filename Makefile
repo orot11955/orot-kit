@@ -11,7 +11,6 @@ DIST_DIR ?= dist
 ASSETS_DIR ?= assets
 SERVE_ADDR ?= :8080
 SERVE_BASE_URL ?= http://localhost:8080
-RUNTIME_CACHE_DIR ?= $(HOME)/.kit-server/cache/runtimes
 STATS_FILE ?= $(HOME)/.kit-server/download-stats.json
 SERVE_STATE_DIR ?= .kit-server
 SERVE_PID ?= $(SERVE_STATE_DIR)/serve.pid
@@ -67,10 +66,10 @@ serve: build-current dist
 		echo "kit docs server already running at $(SERVE_BASE_URL) (pid $$(cat "$(SERVE_PID)"))"; \
 	else \
 		if command -v setsid >/dev/null 2>&1; then \
-			setsid -f sh -c 'echo $$$$ > "$$1"; exec "$$2" install-server --addr "$$3" --bin-dir "$$4" --runtime-cache-dir "$$5" --assets-dir "$$6" --stats-file "$$7" --base-url "$$8"' sh "$(SERVE_PID)" "$(BIN_DIR)/$(APP)" "$(SERVE_ADDR)" "$(DIST_DIR)" "$(RUNTIME_CACHE_DIR)" "$(ASSETS_DIR)" "$(STATS_FILE)" "$(SERVE_BASE_URL)" > "$(SERVE_LOG)" 2>&1; \
+			setsid -f sh -c 'echo $$$$ > "$$1"; exec "$$2" install-server --addr "$$3" --bin-dir "$$4" --assets-dir "$$5" --stats-file "$$6" --base-url "$$7"' sh "$(SERVE_PID)" "$(BIN_DIR)/$(APP)" "$(SERVE_ADDR)" "$(DIST_DIR)" "$(ASSETS_DIR)" "$(STATS_FILE)" "$(SERVE_BASE_URL)" > "$(SERVE_LOG)" 2>&1; \
 			pid=$$(cat "$(SERVE_PID)"); \
 		else \
-			nohup "$(BIN_DIR)/$(APP)" install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --runtime-cache-dir "$(RUNTIME_CACHE_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)" > "$(SERVE_LOG)" 2>&1 & \
+			nohup "$(BIN_DIR)/$(APP)" install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)" > "$(SERVE_LOG)" 2>&1 & \
 			pid=$$!; \
 			echo $$pid > "$(SERVE_PID)"; \
 		fi; \
@@ -110,10 +109,10 @@ serve-log:
 	fi
 
 serve-site: dist
-	$(GOENV) $(GO) run . install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --runtime-cache-dir "$(RUNTIME_CACHE_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)"
+	$(GOENV) $(GO) run . install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)"
 
 serve-site-dry-run:
-	$(GOENV) $(GO) run . --dry-run install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --runtime-cache-dir "$(RUNTIME_CACHE_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)"
+	$(GOENV) $(GO) run . --dry-run install-server --addr "$(SERVE_ADDR)" --bin-dir "$(DIST_DIR)" --assets-dir "$(ASSETS_DIR)" --stats-file "$(STATS_FILE)" --base-url "$(SERVE_BASE_URL)"
 
 clean:
 	rm -rf $(BIN_DIR) $(DIST_DIR)

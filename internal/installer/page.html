@@ -65,11 +65,19 @@ curl -fsSL http://localhost:8080/uninstall.sh | sh</code></pre>
 
   <h2>대표 명령어</h2>
   <pre><code>kit --help
+kit -v
+kit update
 kit resource
 kit network
 kit git status
-kit runtime current node
 kit service list</code></pre>
+
+  <h2>변경 사항</h2>
+  <ul>
+    <li>Runtime Manager 기능과 Node·Go·Python·Java 런타임 단축 명령을 제거했습니다.</li>
+    <li>Docker 관리 기능을 제거하고 서비스 관리는 systemctl·Homebrew services 중심으로 단순화했습니다.</li>
+    <li>설치 서버에서 런타임 캐시 API와 runtime-cache-dir 옵션을 제거했습니다.</li>
+  </ul>
 
   <h2>Network</h2>
   <pre><code>kit network ip
@@ -88,14 +96,8 @@ kit resource process
 kit resource logs
 kit resource logs nginx</code></pre>
 
-  <h2>Runtime</h2>
-  <pre><code>kit runtime available node
-kit runtime install node 22.3.0 --from-server http://localhost:8080/runtime
-kit runtime use node 22.3.0
-kit runtime remove node 22.3.0</code></pre>
-
   <h2>Service</h2>
-  <pre><code>kit service add orot --type docker-compose --name web --path /srv/orot
+  <pre><code>kit service add nginx --type systemctl --name nginx
 kit service nginx status
 kit service nginx logs
 kit service nginx restart</code></pre>

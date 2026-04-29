@@ -31,9 +31,8 @@ func TestSaveLoadService(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	cfg := Default()
 	cfg.Services["orot"] = Service{
-		Type: "docker-compose",
-		Name: "web",
-		Path: "/srv/orot",
+		Type: "systemctl",
+		Name: "nginx",
 	}
 	if err := SavePath(path, cfg); err != nil {
 		t.Fatal(err)
@@ -43,15 +42,15 @@ func TestSaveLoadService(t *testing.T) {
 		t.Fatal(err)
 	}
 	service := loaded.Services["orot"]
-	if service.Type != "docker-compose" || service.Name != "web" || service.Path != "/srv/orot" {
+	if service.Type != "systemctl" || service.Name != "nginx" {
 		t.Fatalf("loaded service mismatch: %#v", service)
 	}
 }
 
-func TestSaveLoadServerRuntimeBaseURL(t *testing.T) {
+func TestSaveLoadServerInstallBaseURL(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	cfg := Default()
-	cfg.Server.RuntimeBaseURL = "https://kit.example.com/runtime"
+	cfg.Server.InstallBaseURL = "https://kit.example.com"
 	if err := SavePath(path, cfg); err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +58,7 @@ func TestSaveLoadServerRuntimeBaseURL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.Server.RuntimeBaseURL != "https://kit.example.com/runtime" {
-		t.Fatalf("runtime_base_url = %q", loaded.Server.RuntimeBaseURL)
+	if loaded.Server.InstallBaseURL != "https://kit.example.com" {
+		t.Fatalf("install_base_url = %q", loaded.Server.InstallBaseURL)
 	}
 }

@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/orot-dev/orot-kit/internal/builder"
+	"github.com/orot-dev/orot-kit/internal/checksum"
 	"github.com/orot-dev/orot-kit/internal/detect"
 	"github.com/orot-dev/orot-kit/internal/output"
 	"github.com/orot-dev/orot-kit/internal/runner"
-	kitruntime "github.com/orot-dev/orot-kit/internal/runtime"
 	"github.com/spf13/cobra"
 )
 
@@ -193,7 +193,7 @@ func newDownloadCommand() *cobra.Command {
 			results := []runner.Result{runner.Run(context.Background(), downloadCommand)}
 			verified := false
 			if results[0].Err == nil && sha256 != "" {
-				if err := kitruntime.VerifySHA256(outputPath, sha256); err != nil {
+				if err := checksum.VerifySHA256(outputPath, sha256); err != nil {
 					return err
 				}
 				verified = true

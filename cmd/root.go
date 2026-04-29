@@ -34,17 +34,22 @@ func Execute() error {
 }
 
 func NewRootCommand() *cobra.Command {
+	var showVersion bool
 	root := &cobra.Command{
 		Use:           "kit",
 		Short:         "Personal terminal toolkit for developers and system engineers",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if showVersion {
+				return writeVersion(cmd)
+			}
 			return cmd.Help()
 		},
 	}
 	configureRootHelp(root)
 
+	root.Flags().BoolVarP(&showVersion, "version", "v", false, "print kit version")
 	root.PersistentFlags().BoolVar(&opts.dryRun, "dry-run", false, "show command without executing")
 	root.PersistentFlags().BoolVar(&opts.json, "json", false, "print JSON output")
 	root.PersistentFlags().BoolVar(&opts.verbose, "verbose", false, "print detailed command output")
@@ -53,14 +58,13 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newVersionCommand())
 	root.AddCommand(newInfoCommand())
 	registerUninstallCommand(root)
+	registerUpdateCommand(root)
 	registerFileCommands(root)
 	registerArchiveCommands(root)
 	registerResourceCommands(root)
 	registerNetworkCommands(root)
 	registerGitCommands(root)
-	registerRuntimeCommands(root)
 	registerServiceCommands(root)
-	registerDockerCommands(root)
 	registerSSHCommands(root)
 	registerTransferCommands(root)
 	registerFirewallCommands(root)
@@ -96,10 +100,8 @@ func organizeRootCommands(root *cobra.Command) {
 		"network":   rootGroupSystem,
 		"git":       rootGroupDev,
 		"diff":      rootGroupDev,
-		"runtime":   rootGroupDev,
 		"secret":    rootGroupDev,
 		"service":   rootGroupOps,
-		"docker":    rootGroupOps,
 		"fw":        rootGroupOps,
 		"ssh":       rootGroupAccess,
 		"send":      rootGroupAccess,
@@ -108,6 +110,7 @@ func organizeRootCommands(root *cobra.Command) {
 		"version":   rootGroupKit,
 		"info":      rootGroupKit,
 		"uninstall": rootGroupKit,
+		"update":    rootGroupKit,
 	}
 	for _, command := range root.Commands() {
 		if group, ok := groups[command.Name()]; ok {
@@ -121,12 +124,16 @@ func newVersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: "Print kit version",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return writer(cmd).Write(output.Result{
-				Title:  "Kit Version",
-				Result: version.Version,
-			})
+			return writeVersion(cmd)
 		},
 	}
+}
+
+func writeVersion(cmd *cobra.Command) error {
+	return writer(cmd).Write(output.Result{
+		Title:  "Kit Version",
+		Result: version.Version,
+	})
 }
 
 func newInfoCommand() *cobra.Command {

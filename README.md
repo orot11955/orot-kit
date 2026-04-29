@@ -11,18 +11,28 @@
 | macOS | arm64, amd64 |
 | Linux | arm64, amd64 |
 
-다운로드는 `curl` 기반으로만 처리합니다. 설치 스크립트, `kit network download`, 런타임 서버 설치 흐름 모두 `curl`을 사용합니다.
+다운로드는 `curl` 기반으로만 처리합니다. 설치 스크립트와 `kit network download` 모두 `curl`을 사용합니다.
 
 ## 빠른 시작
 
 ```bash
+go run . -v
 go run . version
 go run . info
+go run . --dry-run update
 go run . --dry-run find nginx --root .
 go run . --dry-run archive README.md --format tar.gz --output readme.tar.gz
 go run . --dry-run network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
 go run . resource
 go run . network
+```
+
+버전 확인:
+
+```bash
+kit -v
+kit --version
+kit version
 ```
 
 전역 플래그:
@@ -53,6 +63,22 @@ curl -fsSL http://localhost:8080/install.sh | KIT_INSTALL_DIR=~/bin sh
 ```bash
 kit network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
 kit network download http://localhost:8080/bin/kit-linux-amd64 --output kit --sha256 <sha256>
+```
+
+## 업데이트
+
+설치 서버의 현재 OS/Arch 바이너리로 실행 중인 `kit`을 교체합니다. 업데이트용 바이너리 다운로드는 서버 다운로드 카운트에 포함하지 않습니다.
+
+```bash
+kit update
+kit update --dry-run
+kit update --base-url http://localhost:8080
+```
+
+기본 업데이트 서버는 `KIT_BASE_URL`, `KIT_INSTALL_BASE_URL`, `~/.kit/config.yaml`의 `server.install_base_url`, `http://localhost:8080` 순서로 결정합니다. 현재 실행 파일이 아닌 다른 경로를 교체하려면 `--bin`을 사용합니다.
+
+```bash
+kit update --bin ~/.local/bin/kit
 ```
 
 ## 제거
@@ -102,6 +128,12 @@ go build ./...
 ```
 
 ## 주요 기능
+
+## 변경 사항
+
+- Runtime Manager 기능을 제거했습니다. `runtime` 명령과 `node`, `go`, `python`, `java` 런타임 단축 명령은 더 이상 제공하지 않습니다.
+- Docker 관리 기능을 제거했습니다. 서비스 관리는 `systemctl`과 Homebrew services 중심으로 단순화했습니다.
+- 설치 서버에서 런타임 캐시 API를 제거했습니다. `/runtime` 계열 엔드포인트와 `--runtime-cache-dir` 옵션은 더 이상 사용하지 않습니다.
 
 ### 파일 탐색
 
@@ -177,23 +209,17 @@ kit diff old.go new.go --context 5
 
 Git 기능은 저장소를 변경하지 않는 조회 중심 명령으로 구성합니다.
 
-### 서비스와 Docker
+### 서비스
 
 ```bash
 kit service list
 kit service nginx status
 kit service nginx logs --tail 200
 kit service nginx restart
-kit service add orot --type docker-compose --name web --path /srv/orot
-
-kit docker ps
-kit docker up web --project-directory /srv/orot
-kit docker logs web --tail 100
-kit docker restart web
-kit docker clean --target volumes
+kit service add nginx --type systemctl --name nginx
 ```
 
-서비스 alias는 `~/.kit/config.yaml`에 저장되며, `systemctl`, Homebrew services, Docker, Docker Compose 흐름을 지원합니다.
+서비스 alias는 `~/.kit/config.yaml`에 저장되며, `systemctl`과 Homebrew services 흐름을 지원합니다.
 
 ### SSH와 전송
 
@@ -219,26 +245,6 @@ kit fw close 8080 --dry-run
 ```
 
 Linux에서는 `ufw` 또는 `firewall-cmd`를 감지해 명령을 구성합니다. macOS의 `pfctl` 변경은 자동화하지 않고 안내 오류를 반환합니다.
-
-### Runtime Manager
-
-Node, Go, Python, Java 런타임을 `~/.kit/runtimes` 아래에 설치하고 `~/.kit/shims`로 전환합니다.
-
-```bash
-kit runtime available
-kit runtime list
-kit runtime current node
-kit runtime cache node 22.3.0
-kit runtime serve --addr :8081
-
-kit runtime available node
-kit runtime install node 22.3.0 --from ./node-runtime.tar.gz
-kit runtime install node 22.3.0 --from-server http://localhost:8080/runtime
-kit runtime use node 22.3.0
-kit runtime remove node 22.3.0
-```
-
-URL 기반 런타임 설치는 내부적으로 `curl`로 내려받은 뒤 압축을 해제합니다.
 
 ### Secret
 
@@ -266,7 +272,7 @@ output:
   format: text
 
 server:
-  runtime_base_url: http://localhost:8080/runtime
+  install_base_url: http://localhost:8080
 
 ssh:
   hosts:
@@ -277,10 +283,9 @@ ssh:
       identity_file: ~/.ssh/orbit
 
 services:
-  orot:
-    type: docker-compose
-    name: web
-    path: /srv/orot
+  nginx:
+    type: systemctl
+    name: nginx
 ```
 
 ## 설치 서버와 문서 사이트
@@ -299,7 +304,6 @@ make serve-stop
 kit install-server \
   --addr :8080 \
   --bin-dir dist \
-  --runtime-cache-dir ~/.kit-server/cache/runtimes \
   --assets-dir assets \
   --stats-file ~/.kit-server/download-stats.json \
   --base-url http://localhost:8080
@@ -315,12 +319,12 @@ kit install-server \
 | `/bin/<kit binary>` | 배포 바이너리 |
 | `/bin/<kit binary>/checksum` | 바이너리 SHA256 |
 | `/version` | 버전, 빌드 정보, 바이너리 메타데이터 |
-| `/runtime` | 런타임 서버 메타데이터 |
-| `/runtime/<name>/<version>/<os>/<arch>` | 캐시된 런타임 아카이브 |
 | `/stats` | 실제 GET 다운로드 집계 |
 | `/healthz` | 상태 확인 |
 
-다운로드 통계는 실제 바이너리/런타임 파일 `GET` 요청만 집계합니다. `HEAD`, `/install.sh`, `/version`, `/stats` 조회는 다운로드 수에 포함하지 않습니다.
+다운로드 통계는 실제 바이너리 파일 `GET` 요청만 집계합니다. `HEAD`, `/install.sh`, `/version`, `/stats` 조회와 `kit update`가 사용하는 `/bin/<kit binary>?update=1` 요청은 다운로드 수에 포함하지 않습니다.
+
+런타임 캐시 배포 기능은 제거되어 `/runtime` 계열 엔드포인트를 제공하지 않습니다.
 
 ## 개발 메모
 
@@ -351,10 +355,10 @@ CLI smoke test:
 
 ```bash
 bin/kit --help
+bin/kit -v
+bin/kit update --dry-run
 bin/kit --dry-run find nginx --root . --type file
 bin/kit --dry-run archive README.md --format tar.gz --output readme.tar.gz
 bin/kit --dry-run network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
-bin/kit --dry-run runtime install node 22.3.0 --from-server http://localhost:8080/runtime
 bin/kit uninstall --dry-run
-bin/kit runtime cache node 22.3.0
 ```

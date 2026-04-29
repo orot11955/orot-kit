@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/orot-dev/orot-kit/internal/builder"
@@ -45,7 +44,6 @@ func newServiceAddCommand() *cobra.Command {
 	var alias string
 	var serviceType string
 	var name string
-	var path string
 	command := &cobra.Command{
 		Use:   "add [alias]",
 		Short: "Add a reusable service alias",
@@ -65,8 +63,6 @@ func newServiceAddCommand() *cobra.Command {
 			if serviceType == "" {
 				serviceType, err = prompt.Select("서비스 타입", []builder.Choice{
 					{Label: "systemctl", Value: "systemctl"},
-					{Label: "docker-compose", Value: "docker-compose"},
-					{Label: "docker", Value: "docker"},
 					{Label: "brew", Value: "brew"},
 				}, 0)
 				if err != nil {
@@ -75,12 +71,6 @@ func newServiceAddCommand() *cobra.Command {
 			}
 			if name == "" {
 				name, err = prompt.Ask("실제 서비스 이름", alias)
-				if err != nil {
-					return err
-				}
-			}
-			if path == "" && (serviceType == "docker-compose" || serviceType == "compose") {
-				path, err = prompt.Ask("Compose 프로젝트 경로", ".")
 				if err != nil {
 					return err
 				}
@@ -95,7 +85,7 @@ func newServiceAddCommand() *cobra.Command {
 			if cfg.Services == nil {
 				cfg.Services = map[string]config.Service{}
 			}
-			cfg.Services[alias] = config.Service{Type: serviceType, Name: name, Path: path}
+			cfg.Services[alias] = config.Service{Type: serviceType, Name: name}
 			command := runner.Shell("write " + runner.Quote(config.DefaultPath()))
 			if opts.dryRun {
 				return writeDryRun(cmd, "Service Add", []runner.Command{command}, []string{"kit " + alias + " status", "kit service list"})
@@ -113,9 +103,8 @@ func newServiceAddCommand() *cobra.Command {
 		},
 	}
 	command.Flags().StringVar(&alias, "alias", "", "service alias")
-	command.Flags().StringVar(&serviceType, "type", "", "systemctl, docker-compose, docker, or brew")
+	command.Flags().StringVar(&serviceType, "type", "", "systemctl or brew")
 	command.Flags().StringVar(&name, "name", "", "actual service name")
-	command.Flags().StringVar(&path, "path", "", "service project path")
 	return command
 }
 
@@ -147,14 +136,14 @@ func runService(cmd *cobra.Command, args []string, options *serviceOptions) erro
 		return writer(cmd).Write(output.Result{
 			Title:   "Service " + titleAction(action),
 			Summary: err.Error(),
-			Hint:    []string{"kit service list", "kit docker ps"},
+			Hint:    []string{"kit service list"},
 		})
 	}
 	if opts.dryRun {
-		return writeDryRun(cmd, "Service "+titleAction(action), commands, []string{"kit service list", "kit docker ps"})
+		return writeDryRun(cmd, "Service "+titleAction(action), commands, []string{"kit service list"})
 	}
 	results := runner.RunMany(context.Background(), commands)
-	return writeRunnerResults(cmd, "Service "+titleAction(action), summary, results, []string{"kit service list", "kit docker ps"})
+	return writeRunnerResults(cmd, "Service "+titleAction(action), summary, results, []string{"kit service list"})
 }
 
 func parseServiceArgs(args []string) (string, string) {
@@ -227,9 +216,6 @@ func serviceCommands(action string, alias string, options serviceOptions, cfg co
 		return nil, "", err
 	}
 	summary := fmt.Sprintf("Service: %s\nType: %s\nTarget: %s", alias, resolvedServiceType(service), service.Name)
-	if service.Path != "" {
-		summary += "\nPath: " + service.Path
-	}
 	return []runner.Command{command}, summary, nil
 }
 
@@ -239,9 +225,6 @@ func serviceListCommand() (runner.Command, error) {
 	}
 	if detect.IsDarwin() && detect.CommandExists("brew") {
 		return runner.External("brew", "services", "list"), nil
-	}
-	if detect.CommandExists("docker") {
-		return runner.External("docker", "ps", "--format", "table {{.Names}}\t{{.Status}}\t{{.Ports}}"), nil
 	}
 	return runner.Command{}, fmt.Errorf("no supported service manager found")
 }
@@ -253,10 +236,6 @@ func serviceCommandForTarget(action string, service config.Service, options serv
 		return systemctlServiceCommand(action, service.Name, options)
 	case "brew", "homebrew":
 		return brewServiceCommand(action, service.Name, options)
-	case "docker-compose", "compose":
-		return composeServiceCommand(action, service, options)
-	case "docker":
-		return dockerServiceCommand(action, service.Name, options)
 	default:
 		return runner.Command{}, fmt.Errorf("unsupported service type: %s", serviceType)
 	}
@@ -266,17 +245,11 @@ func resolvedServiceType(service config.Service) string {
 	if service.Type != "" && service.Type != "auto" {
 		return service.Type
 	}
-	if service.Path != "" {
-		return "docker-compose"
-	}
 	if detect.CommandExists("systemctl") {
 		return "systemctl"
 	}
 	if detect.IsDarwin() && detect.CommandExists("brew") {
 		return "brew"
-	}
-	if detect.CommandExists("docker") {
-		return "docker"
 	}
 	return "auto"
 }
@@ -321,64 +294,6 @@ func brewServiceCommand(action string, name string, options serviceOptions) (run
 	}
 }
 
-func composeServiceCommand(action string, service config.Service, options serviceOptions) (runner.Command, error) {
-	compose := dockerComposeBaseArgs(dockerOptions{projectDir: service.Path})
-	name := service.Name
-	switch action {
-	case "status":
-		args := append(compose, "ps")
-		if name != "" {
-			args = append(args, name)
-		}
-		return dockerComposeRunner(args), nil
-	case "up":
-		args := append(compose, "up", "-d")
-		if name != "" {
-			args = append(args, name)
-		}
-		return dockerComposeRunner(args), nil
-	case "down":
-		if name != "" {
-			return dockerComposeRunner(append(compose, "stop", name)), nil
-		}
-		return dockerComposeRunner(append(compose, "down")), nil
-	case "restart":
-		args := append(compose, "restart")
-		if name != "" {
-			args = append(args, name)
-		}
-		return dockerComposeRunner(args), nil
-	case "logs":
-		args := append(compose, "logs", "--tail", fmt.Sprint(options.tail))
-		if name != "" {
-			args = append(args, name)
-		}
-		return dockerComposeRunner(args), nil
-	default:
-		return runner.Command{}, fmt.Errorf("unsupported docker compose service action: %s", action)
-	}
-}
-
-func dockerServiceCommand(action string, name string, options serviceOptions) (runner.Command, error) {
-	if name == "" {
-		return runner.Command{}, fmt.Errorf("container name is required for %s", action)
-	}
-	switch action {
-	case "status":
-		return runner.External("docker", "ps", "--filter", "name="+name), nil
-	case "up":
-		return runner.External("docker", "start", name), nil
-	case "down":
-		return runner.External("docker", "stop", name), nil
-	case "restart":
-		return runner.External("docker", "restart", name), nil
-	case "logs":
-		return runner.External("docker", "logs", "--tail", fmt.Sprint(options.tail), name), nil
-	default:
-		return runner.Command{}, fmt.Errorf("unsupported docker service action: %s", action)
-	}
-}
-
 func configuredServicesSummary(cfg config.Config) string {
 	names := config.ServiceNames(cfg)
 	if len(names) == 0 {
@@ -392,9 +307,6 @@ func configuredServicesSummary(cfg config.Config) string {
 			target = name
 		}
 		parts := []string{name, service.Type, target}
-		if service.Path != "" {
-			parts = append(parts, filepath.Clean(expandPath(service.Path)))
-		}
 		rows = append(rows, strings.Join(parts, "  "))
 	}
 	return strings.Join(rows, "\n")
@@ -469,7 +381,7 @@ func rootCommandExists(root *cobra.Command, name string) bool {
 
 func reservedRootCommand(name string) bool {
 	switch name {
-	case "docker", "ssh", "send", "receive", "sync", "service", "git", "runtime", "node", "go", "python", "java", "secret", "fw", "install-server", "uninstall", "diff":
+	case "docker", "runtime", "node", "go", "python", "java", "ssh", "send", "receive", "sync", "service", "git", "secret", "fw", "install-server", "uninstall", "update", "version", "info", "diff":
 		return true
 	default:
 		return false

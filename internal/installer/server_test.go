@@ -22,9 +22,8 @@ func TestInstallServerVersionAndBinary(t *testing.T) {
 	}
 
 	handler := NewServerWithConfig(Config{
-		BinDir:          binDir,
-		RuntimeCacheDir: filepath.Join(root, "runtimes"),
-		BaseURL:         "http://example.test",
+		BinDir:  binDir,
+		BaseURL: "http://example.test",
 	})
 
 	response := request(handler, "/version")
@@ -64,58 +63,11 @@ func TestInstallServerVersionAndBinary(t *testing.T) {
 	}
 }
 
-func TestInstallServerRuntimeMetadataAndStats(t *testing.T) {
-	root := t.TempDir()
-	cacheDir := filepath.Join(root, "runtimes")
-	runtimeDir := filepath.Join(cacheDir, "node", "linux-amd64")
-	if err := os.MkdirAll(runtimeDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	archive := filepath.Join(runtimeDir, "node-v22.3.0-linux-x64.tar.gz")
-	if err := os.WriteFile(archive, []byte("runtime"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	handler := NewServerWithConfig(Config{
-		BinDir:          filepath.Join(root, "dist"),
-		RuntimeCacheDir: cacheDir,
-		BaseURL:         "http://example.test",
-	})
-
-	metaResponse := request(handler, "/runtime/node/22.3.0/linux/amd64?meta=1")
-	if metaResponse.Code != http.StatusOK {
-		t.Fatalf("runtime meta status = %d", metaResponse.Code)
-	}
-	var meta map[string]any
-	if err := json.NewDecoder(metaResponse.Body).Decode(&meta); err != nil {
-		t.Fatal(err)
-	}
-	if meta["cached"] != true || meta["version"] != "22.3.0" {
-		t.Fatalf("runtime meta = %#v", meta)
-	}
-
-	headResponse := requestWithMethod(handler, http.MethodHead, "/runtime/node/22.3.0/linux/amd64")
-	if headResponse.Code != http.StatusOK {
-		t.Fatalf("runtime head status = %d", headResponse.Code)
-	}
-
-	fileResponse := request(handler, "/runtime/node/22.3.0/linux/amd64")
-	if fileResponse.Code != http.StatusOK {
-		t.Fatalf("runtime file status = %d", fileResponse.Code)
-	}
-
-	statsResponse := request(handler, "/stats")
-	var stats struct {
-		Downloads DownloadStats `json:"downloads"`
-	}
-	if err := json.NewDecoder(statsResponse.Body).Decode(&stats); err != nil {
-		t.Fatal(err)
-	}
-	if stats.Downloads.Linux != 1 || stats.Downloads.Total != 1 {
-		t.Fatalf("download stats = %#v", stats.Downloads)
-	}
-	if stats.Downloads.ByPath["/runtime/node/22.3.0/linux/amd64"] != 1 {
-		t.Fatalf("stats = %#v", stats)
+func TestInstallServerRuntimeEndpointIsRemoved(t *testing.T) {
+	handler := NewServerWithConfig(Config{BaseURL: "http://example.test"})
+	response := request(handler, "/runtime")
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("/runtime status = %d", response.Code)
 	}
 }
 
@@ -162,16 +114,20 @@ func TestInstallServerPageAssetsAndMacLinuxStats(t *testing.T) {
 		"supported-os-list",
 		"macOS",
 		"Linux",
+		"kit -v",
+		"kit update --dry-run",
 		"kit uninstall --dry-run",
+		"변경 사항",
+		"런타임 캐시 API",
+		"Docker 관리 기능을 제거",
 		"kit git diff",
-		"kit runtime serve",
-		"make serve",
+		"kit service nginx status",
 	} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("page missing %q", want)
 		}
 	}
-	for _, unexpected := range []string{"직접 다운로드", `class="chip"`, `href="/bin/kit-darwin-arm64"`} {
+	for _, unexpected := range []string{"직접 다운로드", `class="chip"`, `href="/bin/kit-darwin-arm64"`, "kit runtime", "kit docker"} {
 		if strings.Contains(page, unexpected) {
 			t.Fatalf("page should not contain %q", unexpected)
 		}
@@ -259,6 +215,36 @@ func TestInstallServerHeadDoesNotCountDownload(t *testing.T) {
 	}
 	if stats.Downloads.Total != 0 || stats.Downloads.Linux != 0 {
 		t.Fatalf("HEAD should not count as download: %#v", stats.Downloads)
+	}
+}
+
+func TestInstallServerUpdateDownloadDoesNotCount(t *testing.T) {
+	root := t.TempDir()
+	binDir := filepath.Join(root, "dist")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(binDir, "kit-linux-amd64"), []byte("kit"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	handler := NewServerWithConfig(Config{
+		BinDir:  binDir,
+		BaseURL: "http://kit.local",
+	})
+
+	if response := request(handler, "/bin/kit-linux-amd64?update=1"); response.Code != http.StatusOK {
+		t.Fatalf("update download status = %d", response.Code)
+	}
+	statsResponse := request(handler, "/stats")
+	var stats struct {
+		Downloads DownloadStats `json:"downloads"`
+	}
+	if err := json.NewDecoder(statsResponse.Body).Decode(&stats); err != nil {
+		t.Fatal(err)
+	}
+	if stats.Downloads.Total != 0 || len(stats.Downloads.ByPath) != 0 {
+		t.Fatalf("update download should not count: %#v", stats.Downloads)
 	}
 }
 
