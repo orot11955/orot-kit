@@ -1,0 +1,30 @@
+# Build artifacts
+/bin/
+/dist/
+/kit
+*.test
+*.out
+*.exe
+
+# Local install/docs server state
+/.kit-server/
+download-stats.json
+*.log
+
+# Test and coverage output
+coverage.out
+coverage.html
+*.coverprofile
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
