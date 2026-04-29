@@ -609,7 +609,6 @@ func renderPage(data PageData) string {
           <a href="#ssh-transfer">SSH & Transfer</a>
           <a href="#firewall">Firewall</a>
           <a href="#secret">Secret</a>
-          <a href="#install-server">Install Server</a>
 
           <div class="sidebar-section-title">기타</div>
           <a href="#flags">공통 플래그</a>
@@ -650,10 +649,8 @@ func renderPage(data PageData) string {
 
       <h2 id="uninstall">제거</h2>
       <p>설치된 <code>kit</code> 바이너리와 <code>~/.kit</code>, <code>~/.kit-server</code> 상태 파일을 함께 정리한다.</p>
-      <div class="install-box">
-        <span class="prompt">$</span>
-        <span class="cmd">` + uninstall + `</span>
-      </div>
+      <pre><code>kit --help          <span class="c"># 전체 명령어 목록</span>
+      kit uninstall         <span class="c"># kit 패키지 제거</span></pre>
       <div class="install-alt">
         CLI에서 먼저 확인 &nbsp;→&nbsp;
         <code>kit uninstall --dry-run</code>
@@ -830,22 +827,6 @@ kit secret hex --length 32
 kit secret base64 --length 32
 kit secret env --key API_TOKEN --format base64
 kit secret uuid</code></pre>
-
-      <h2 id="install-server">Install Server</h2>
-
-      <h3>문서·설치·다운로드 서버</h3>
-      <pre><code>kit install-server --addr :8081 \
-  --bin-dir dist \
-  --assets-dir assets \
-  --stats-file ~/.kit-server/download-stats.json \
-  --base-url http://localhost:8081
-
-make dist
-make serve
-make serve-status
-make serve-log
-make serve-stop</code></pre>
-      <p><code>make serve</code>는 OS별 바이너리를 빌드한 뒤 백그라운드로 docs 서버를 띄우고 <code>.kit-server/serve.pid</code>, <code>.kit-server/serve.log</code>를 남긴다.</p>
 
       <h2 id="flags">공통 플래그</h2>
 
