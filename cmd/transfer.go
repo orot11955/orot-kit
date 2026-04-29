@@ -64,7 +64,7 @@ func newTransferCommand(mode string) *cobra.Command {
 			}
 			title := "Transfer " + titleAction(mode)
 			if opts.dryRun {
-				return writeDryRun(cmd, title, []runner.Command{command}, []string{"kit ssh add", "kit port"})
+				return writeDryRun(cmd, title, []runner.Command{command}, []string{"kit ssh add", "kit network port"})
 			}
 			if !opts.yes {
 				ok, err := confirmExecution(cmd, title, command, "Files will be transferred over SSH using "+options.method+".", true)

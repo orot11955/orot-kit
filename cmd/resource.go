@@ -10,11 +10,20 @@ import (
 )
 
 func registerResourceCommands(root *cobra.Command) {
-	root.AddCommand(newResourceCommand())
-	root.AddCommand(newDiskCommand())
-	root.AddCommand(newMemoryCommand())
-	root.AddCommand(newProcessCommand())
-	root.AddCommand(newLogsCommand())
+	resource := newResourceCommand()
+	addResourceSubcommands(resource)
+	root.AddCommand(resource)
+	root.AddCommand(hiddenCommand(newDiskCommand()))
+	root.AddCommand(hiddenCommand(newMemoryCommand()))
+	root.AddCommand(hiddenCommand(newProcessCommand()))
+	root.AddCommand(hiddenCommand(newLogsCommand()))
+}
+
+func addResourceSubcommands(command *cobra.Command) {
+	command.AddCommand(newDiskCommand())
+	command.AddCommand(newMemoryCommand())
+	command.AddCommand(newProcessCommand())
+	command.AddCommand(newLogsCommand())
 }
 
 func newResourceCommand() *cobra.Command {
@@ -24,7 +33,7 @@ func newResourceCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			commands := resourceCommands()
 			if opts.dryRun {
-				return writeDryRun(cmd, "Resource Summary", commands, []string{"kit disk", "kit memory", "kit process"})
+				return writeDryRun(cmd, "Resource Summary", commands, []string{"kit resource disk", "kit resource memory", "kit resource process"})
 			}
 			results := runner.RunMany(context.Background(), commands)
 			system := detect.System()
@@ -32,7 +41,7 @@ func newResourceCommand() *cobra.Command {
 			if primary := detect.PrimaryIP(); primary != "" {
 				summary += "\nPrimary IP: " + primary
 			}
-			return writeRunnerResults(cmd, "Resource Summary", summary, results, []string{"kit disk", "kit memory", "kit process"})
+			return writeRunnerResults(cmd, "Resource Summary", summary, results, []string{"kit resource disk", "kit resource memory", "kit resource process"})
 		},
 	}
 }
@@ -92,10 +101,10 @@ func newProcessCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			command := runner.Shell("ps aux | head -n 15")
 			if opts.dryRun {
-				return writeDryRun(cmd, "Process", []runner.Command{command}, []string{"kit resource", "kit port"})
+				return writeDryRun(cmd, "Process", []runner.Command{command}, []string{"kit resource", "kit network port"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Process", "Top process snapshot.", []runner.Result{result}, []string{"kit resource", "kit port"})
+			return writeRunnerResults(cmd, "Process", "Top process snapshot.", []runner.Result{result}, []string{"kit resource", "kit network port"})
 		},
 	}
 }
@@ -123,14 +132,14 @@ func newLogsCommand() *cobra.Command {
 				return writer(cmd).Write(output.Result{
 					Title:   "Logs",
 					Summary: "No supported log command found.",
-					Hint:    []string{"kit service logs"},
+					Hint:    []string{"kit service logs <service>"},
 				})
 			}
 			if opts.dryRun {
-				return writeDryRun(cmd, "Logs", []runner.Command{command}, []string{"kit service logs"})
+				return writeDryRun(cmd, "Logs", []runner.Command{command}, []string{"kit service logs <service>"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Logs", "Recent system logs.", []runner.Result{result}, []string{"kit service logs"})
+			return writeRunnerResults(cmd, "Logs", "Recent system logs.", []runner.Result{result}, []string{"kit service logs <service>"})
 		},
 	}
 	command.Flags().StringVar(&unit, "unit", "", "systemd unit")

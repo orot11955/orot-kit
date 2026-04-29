@@ -656,13 +656,13 @@ func renderPage(data PageData) string {
       </div>
 
       <h2 id="quickstart">빠른 시작</h2>
-      <pre><code>kit --help          <span class="c"># 전체 명령어 목록</span>
+      <pre><code>kit --help          <span class="c"># 대표 명령어 목록</span>
 kit version         <span class="c"># 빌드 버전 확인</span>
 kit info            <span class="c"># OS, Arch, Go, 설치 경로</span>
 kit resource        <span class="c"># 서버 리소스 요약</span>
 kit network         <span class="c"># 네트워크 요약</span>
 kit git status      <span class="c"># 안전한 Git 상태 확인</span>
-kit node current    <span class="c"># 현재 Node 버전 감지</span></code></pre>
+kit runtime current node <span class="c"># 현재 Node 버전 감지</span></code></pre>
 
       <h3>출력 형식</h3>
       <pre><code>Title
@@ -677,9 +677,9 @@ Result
       <h2 id="files">Files</h2>
 
       <h3>탐색·검색·용량</h3>
-      <pre><code>kit .                         <span class="c"># ls -al .</span>
-kit ..                        <span class="c"># ls -al ..</span>
-kit ...                       <span class="c"># ls -al ../..</span>
+      <pre><code>kit ls .                      <span class="c"># ls -al .</span>
+kit ls ..                     <span class="c"># ls -al ..</span>
+kit ls ../..                  <span class="c"># ls -al ../..</span>
 kit ls ./src
 kit tree . --depth 2
 
@@ -699,7 +699,7 @@ kit size ./dist</code></pre>
       <h3>압축·해제</h3>
       <pre><code>kit archive README.md --format tar.gz --output readme.tar.gz
 kit archive ./dist --format zip --output dist.zip
-kit compress ./logs --format tar.gz --output logs.tar.gz
+kit archive ./logs --format tar.gz --output logs.tar.gz
 
 kit extract readme.tar.gz --dest ./out
 kit extract dist.zip ./out</code></pre>
@@ -709,18 +709,18 @@ kit extract dist.zip ./out</code></pre>
 
       <h3>요약·IP·DNS·HTTP</h3>
       <pre><code>kit network
-kit ip
-kit ping example.com --count 4
-kit dig example.com
-kit curl https://example.com --method GET
-kit download ` + baseURL + `/bin/kit-linux-amd64 --output kit --executable</code></pre>
+kit network ip
+kit network ping example.com --count 4
+kit network dig example.com
+kit network curl https://example.com --method GET
+kit network download ` + baseURL + `/bin/kit-linux-amd64 --output kit --executable</code></pre>
 
       <h3>포트·패킷 캡처</h3>
-      <pre><code>kit port
-kit port kill 1234 --yes
+      <pre><code>kit network port
+kit network port kill 1234 --yes
 
-kit tcpdump --interface eth0 --port 443 --count 50 --dry-run
-kit tcpdump --interface en0 --host 1.1.1.1 --write capture.pcap</code></pre>
+kit network tcpdump --interface eth0 --port 443 --count 50 --dry-run
+kit network tcpdump --interface en0 --host 1.1.1.1 --write capture.pcap</code></pre>
       <div class="callout warn">
         <span class="callout-icon">!</span>
         <span><code>tcpdump</code>는 root 권한이 필요할 수 있다. 실제 실행 전에는 <code>--dry-run</code>으로 명령을 먼저 확인한다.</span>
@@ -730,11 +730,11 @@ kit tcpdump --interface en0 --host 1.1.1.1 --write capture.pcap</code></pre>
 
       <h3>서버 리소스·로그</h3>
       <pre><code>kit resource                 <span class="c"># host, uptime, disk, memory, process 요약</span>
-kit disk                     <span class="c"># df -h</span>
-kit memory                   <span class="c"># free -h 또는 vm_stat</span>
-kit process                  <span class="c"># ps aux 상위 항목</span>
-kit logs nginx
-kit logs --unit nginx</code></pre>
+kit resource disk            <span class="c"># df -h</span>
+kit resource memory          <span class="c"># free -h 또는 vm_stat</span>
+kit resource process         <span class="c"># ps aux 상위 항목</span>
+kit resource logs nginx
+kit resource logs --unit nginx</code></pre>
 
       <h2 id="git">Git & Diff</h2>
 
@@ -761,14 +761,14 @@ kit diff old.go new.go --context 5</code></pre>
 kit runtime list
 kit runtime current node
 kit runtime cache node 22.3.0
+make serve
 kit runtime serve --addr :8081
 
-kit node available
-kit node install 22.3.0 --from ./node-runtime.tar.gz
-kit node install 22.3.0 --from-server ` + baseURL + `/runtime
-kit node use 22.3.0
-kit node current
-kit node remove 22.3.0</code></pre>
+kit runtime available node
+kit runtime install node 22.3.0 --from ./node-runtime.tar.gz
+kit runtime install node 22.3.0 --from-server ` + baseURL + `/runtime
+kit runtime use node 22.3.0
+kit runtime remove node 22.3.0</code></pre>
       <p>런타임은 로컬 아카이브, 디렉터리, 또는 kit runtime server에서 받아 캐시에 설치한다.</p>
 
       <h2 id="service-docker">Service & Docker</h2>
@@ -777,10 +777,7 @@ kit node remove 22.3.0</code></pre>
       <pre><code>kit service add orot --type docker-compose --name web --path /srv/orot
 kit service nginx status
 kit service nginx logs
-kit service nginx restart
-
-kit nginx status
-kit nginx logs</code></pre>
+kit service nginx restart</code></pre>
 
       <h3>Docker Compose</h3>
       <pre><code>kit docker ps

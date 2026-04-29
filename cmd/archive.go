@@ -15,7 +15,7 @@ import (
 
 func registerArchiveCommands(root *cobra.Command) {
 	root.AddCommand(newArchiveCommand("archive"))
-	root.AddCommand(newArchiveCommand("compress"))
+	root.AddCommand(hiddenCommand(newArchiveCommand("compress")))
 	root.AddCommand(newExtractCommand())
 }
 
@@ -24,7 +24,7 @@ func newArchiveCommand(use string) *cobra.Command {
 	var outputFile string
 	command := &cobra.Command{
 		Use:   use + " [target] [output]",
-		Short: "Create an archive with a guided builder",
+		Short: "Create an archive",
 		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := ""
@@ -89,7 +89,7 @@ func newExtractCommand() *cobra.Command {
 	var dest string
 	command := &cobra.Command{
 		Use:   "extract [archive] [dest]",
-		Short: "Extract an archive with a guided builder",
+		Short: "Extract an archive",
 		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			archivePath := ""

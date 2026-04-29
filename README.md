@@ -11,7 +11,7 @@
 | macOS | arm64, amd64 |
 | Linux | arm64, amd64 |
 
-다운로드는 `curl` 기반으로만 처리합니다. 설치 스크립트, `kit download`, 런타임 서버 설치 흐름 모두 `curl`을 사용합니다.
+다운로드는 `curl` 기반으로만 처리합니다. 설치 스크립트, `kit network download`, 런타임 서버 설치 흐름 모두 `curl`을 사용합니다.
 
 ## 빠른 시작
 
@@ -20,7 +20,7 @@ go run . version
 go run . info
 go run . --dry-run find nginx --root .
 go run . --dry-run archive README.md --format tar.gz --output readme.tar.gz
-go run . --dry-run download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
+go run . --dry-run network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
 go run . resource
 go run . network
 ```
@@ -48,11 +48,11 @@ curl -fsSL http://localhost:8080/install.sh | sh
 curl -fsSL http://localhost:8080/install.sh | KIT_INSTALL_DIR=~/bin sh
 ```
 
-파일만 받을 때는 `kit download`를 사용합니다.
+파일만 받을 때는 `kit network download`를 사용합니다.
 
 ```bash
-kit download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
-kit download http://localhost:8080/bin/kit-linux-amd64 --output kit --sha256 <sha256>
+kit network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
+kit network download http://localhost:8080/bin/kit-linux-amd64 --output kit --sha256 <sha256>
 ```
 
 ## 제거
@@ -106,9 +106,9 @@ go build ./...
 ### 파일 탐색
 
 ```bash
-kit .
-kit ..
-kit ...
+kit ls .
+kit ls ..
+kit ls ../..
 kit ls ./src
 kit tree . --depth 2
 kit size .
@@ -123,7 +123,7 @@ kit find "*.go" --root . --type file
 ```bash
 kit archive ./dist --format tar.gz --output dist.tar.gz
 kit archive ./dist --format zip --output dist.zip
-kit compress ./logs --format tar.gz --output logs.tar.gz
+kit archive ./logs --format tar.gz --output logs.tar.gz
 kit extract dist.tar.gz --dest ./out
 kit extract dist.zip ./out
 ```
@@ -134,14 +134,14 @@ kit extract dist.zip ./out
 
 ```bash
 kit network
-kit ip
-kit ping example.com --count 4
-kit dig example.com
-kit curl https://example.com --method GET
-kit download https://example.com/file.tar.gz --output file.tar.gz
-kit port
-kit port kill 1234 --yes
-kit tcpdump --interface eth0 --port 443 --count 50 --dry-run
+kit network ip
+kit network ping example.com --count 4
+kit network dig example.com
+kit network curl https://example.com --method GET
+kit network download https://example.com/file.tar.gz --output file.tar.gz
+kit network port
+kit network port kill 1234 --yes
+kit network tcpdump --interface eth0 --port 443 --count 50 --dry-run
 ```
 
 `tcpdump`, `port kill`처럼 권한이나 위험이 있는 작업은 실행 전에 확인 절차를 둡니다.
@@ -150,11 +150,11 @@ kit tcpdump --interface eth0 --port 443 --count 50 --dry-run
 
 ```bash
 kit resource
-kit disk
-kit memory
-kit process
-kit logs
-kit logs nginx
+kit resource disk
+kit resource memory
+kit resource process
+kit resource logs
+kit resource logs nginx
 ```
 
 OS에서 사용할 수 있는 `uname`, `uptime`, `df`, `free`, `ps`, `journalctl` 등을 조합해 요약합니다.
@@ -184,9 +184,6 @@ kit service nginx status
 kit service nginx logs --tail 200
 kit service nginx restart
 kit service add orot --type docker-compose --name web --path /srv/orot
-
-kit nginx status
-kit nginx logs
 
 kit docker ps
 kit docker up web --project-directory /srv/orot
@@ -233,12 +230,11 @@ kit runtime current node
 kit runtime cache node 22.3.0
 kit runtime serve --addr :8081
 
-kit node available
-kit node install 22.3.0 --from ./node-runtime.tar.gz
-kit node install 22.3.0 --from-server http://localhost:8080/runtime
-kit node use 22.3.0
-kit node current
-kit node remove 22.3.0
+kit runtime available node
+kit runtime install node 22.3.0 --from ./node-runtime.tar.gz
+kit runtime install node 22.3.0 --from-server http://localhost:8080/runtime
+kit runtime use node 22.3.0
+kit runtime remove node 22.3.0
 ```
 
 URL 기반 런타임 설치는 내부적으로 `curl`로 내려받은 뒤 압축을 해제합니다.
@@ -356,8 +352,8 @@ CLI smoke test:
 bin/kit --help
 bin/kit --dry-run find nginx --root . --type file
 bin/kit --dry-run archive README.md --format tar.gz --output readme.tar.gz
-bin/kit --dry-run download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
-bin/kit --dry-run node install 22.3.0 --from-server http://localhost:8080/runtime
+bin/kit --dry-run network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
+bin/kit --dry-run runtime install node 22.3.0 --from-server http://localhost:8080/runtime
 bin/kit uninstall --dry-run
 bin/kit runtime cache node 22.3.0
 ```

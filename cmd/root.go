@@ -20,6 +20,15 @@ type globalOptions struct {
 
 var opts globalOptions
 
+const (
+	rootGroupFiles  = "files"
+	rootGroupSystem = "system"
+	rootGroupDev    = "dev"
+	rootGroupOps    = "ops"
+	rootGroupAccess = "access"
+	rootGroupKit    = "kit"
+)
+
 func Execute() error {
 	return NewRootCommand().Execute()
 }
@@ -34,6 +43,7 @@ func NewRootCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
+	configureRootHelp(root)
 
 	root.PersistentFlags().BoolVar(&opts.dryRun, "dry-run", false, "show command without executing")
 	root.PersistentFlags().BoolVar(&opts.json, "json", false, "print JSON output")
@@ -56,8 +66,54 @@ func NewRootCommand() *cobra.Command {
 	registerFirewallCommands(root)
 	registerSecretCommands(root)
 	registerInstallServerCommands(root)
+	organizeRootCommands(root)
 
 	return root
+}
+
+func configureRootHelp(root *cobra.Command) {
+	root.CompletionOptions.HiddenDefaultCmd = true
+	root.SetHelpCommandGroupID(rootGroupKit)
+	root.AddGroup(
+		&cobra.Group{ID: rootGroupFiles, Title: "Files & Archives:"},
+		&cobra.Group{ID: rootGroupSystem, Title: "System & Network:"},
+		&cobra.Group{ID: rootGroupDev, Title: "Development:"},
+		&cobra.Group{ID: rootGroupOps, Title: "Services & Operations:"},
+		&cobra.Group{ID: rootGroupAccess, Title: "Access & Transfer:"},
+		&cobra.Group{ID: rootGroupKit, Title: "Kit:"},
+	)
+}
+
+func organizeRootCommands(root *cobra.Command) {
+	groups := map[string]string{
+		"ls":        rootGroupFiles,
+		"tree":      rootGroupFiles,
+		"find":      rootGroupFiles,
+		"size":      rootGroupFiles,
+		"archive":   rootGroupFiles,
+		"extract":   rootGroupFiles,
+		"resource":  rootGroupSystem,
+		"network":   rootGroupSystem,
+		"git":       rootGroupDev,
+		"diff":      rootGroupDev,
+		"runtime":   rootGroupDev,
+		"secret":    rootGroupDev,
+		"service":   rootGroupOps,
+		"docker":    rootGroupOps,
+		"fw":        rootGroupOps,
+		"ssh":       rootGroupAccess,
+		"send":      rootGroupAccess,
+		"receive":   rootGroupAccess,
+		"sync":      rootGroupAccess,
+		"version":   rootGroupKit,
+		"info":      rootGroupKit,
+		"uninstall": rootGroupKit,
+	}
+	for _, command := range root.Commands() {
+		if group, ok := groups[command.Name()]; ok {
+			command.GroupID = group
+		}
+	}
 }
 
 func newVersionCommand() *cobra.Command {

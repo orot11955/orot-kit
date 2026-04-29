@@ -23,7 +23,7 @@ func registerServiceCommands(root *cobra.Command) {
 	options := &serviceOptions{tail: 100}
 	service := &cobra.Command{
 		Use:   "service [service] [action]",
-		Short: "Control services through systemd, Homebrew, Docker, or Docker Compose",
+		Short: "Control services",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runService(cmd, args, options)
@@ -419,9 +419,10 @@ func registerServiceAliases(root *cobra.Command, options *serviceOptions) {
 
 func newServiceAliasCommand(alias string, service config.Service, options *serviceOptions) *cobra.Command {
 	command := &cobra.Command{
-		Use:   alias + " [status|up|down|restart|logs]",
-		Short: "Service alias for " + alias,
-		Args:  cobra.MaximumNArgs(1),
+		Use:    alias + " [status|up|down|restart|logs]",
+		Short:  "Service alias for " + alias,
+		Hidden: true,
+		Args:   cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			action := "status"
 			if len(args) > 0 {

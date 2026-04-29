@@ -3,15 +3,101 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>kit installer</title>
+  <title>orot-kit docs</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 48px auto; padding: 0 20px; line-height: 1.6; }
-    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    body {
+      max-width: 920px;
+      margin: 48px auto;
+      padding: 0 20px 80px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      color: #20242a;
+      background: #f7f8fa;
+    }
+
+    h1,
+    h2 {
+      line-height: 1.2;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 34px;
+    }
+
+    h2 {
+      margin-top: 36px;
+      font-size: 22px;
+    }
+
+    p {
+      margin: 10px 0;
+      color: #4d5662;
+    }
+
+    pre {
+      overflow-x: auto;
+      padding: 18px;
+      border: 1px solid #d8dee8;
+      border-radius: 8px;
+      background: #111318;
+      color: #dbe7f3;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    .lead {
+      max-width: 680px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <h1>kit</h1>
-  <p>개발자와 시스템 엔지니어를 위한 개인용 터미널 툴킷입니다.</p>
-  <p><code>curl -fsSL http://localhost:8080/install.sh | sh</code></p>
+  <h1>orot-kit</h1>
+  <p class="lead">macOS와 Linux에서 자주 쓰는 개발, 서버 운영, 파일, 네트워크 명령을 <code>kit</code> 하나로 묶는 개인용 터미널 툴킷입니다.</p>
+
+  <h2>설치</h2>
+  <pre><code>curl -fsSL http://localhost:8080/install.sh | sh
+curl -fsSL http://localhost:8080/uninstall.sh | sh</code></pre>
+
+  <h2>대표 명령어</h2>
+  <pre><code>kit --help
+kit resource
+kit network
+kit git status
+kit runtime current node
+kit service list</code></pre>
+
+  <h2>Network</h2>
+  <pre><code>kit network ip
+kit network ping example.com --count 4
+kit network dig example.com
+kit network curl https://example.com --method GET
+kit network download http://localhost:8080/bin/kit-linux-amd64 --output kit --executable
+kit network port
+kit network port kill 1234 --yes
+kit network tcpdump --interface eth0 --port 443 --count 50 --dry-run</code></pre>
+
+  <h2>Resource</h2>
+  <pre><code>kit resource disk
+kit resource memory
+kit resource process
+kit resource logs
+kit resource logs nginx</code></pre>
+
+  <h2>Runtime</h2>
+  <pre><code>kit runtime available node
+kit runtime install node 22.3.0 --from-server http://localhost:8080/runtime
+kit runtime use node 22.3.0
+kit runtime remove node 22.3.0</code></pre>
+
+  <h2>Service</h2>
+  <pre><code>kit service add orot --type docker-compose --name web --path /srv/orot
+kit service nginx status
+kit service nginx logs
+kit service nginx restart</code></pre>
 </body>
 </html>

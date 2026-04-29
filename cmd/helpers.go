@@ -89,3 +89,8 @@ func notImplementedCommand(use string, short string, title string, hints ...stri
 		},
 	}
 }
+
+func hiddenCommand(command *cobra.Command) *cobra.Command {
+	command.Hidden = true
+	return command
+}

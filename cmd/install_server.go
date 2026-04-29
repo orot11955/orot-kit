@@ -17,8 +17,9 @@ func registerInstallServerCommands(root *cobra.Command) {
 	var assetsDir string
 	var statsFile string
 	command := &cobra.Command{
-		Use:   "install-server",
-		Short: "Serve kit installer endpoints",
+		Use:    "install-server",
+		Short:  "Serve kit installer endpoints",
+		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := installer.Config{
 				BinDir:          expandPath(binDir),

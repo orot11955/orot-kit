@@ -27,7 +27,7 @@ type runtimeInstallOptions struct {
 func registerRuntimeCommands(root *cobra.Command) {
 	runtimeCmd := &cobra.Command{
 		Use:   "runtime",
-		Short: "Manage development runtimes",
+		Short: "Manage runtimes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return writer(cmd).Write(output.Result{
 				Title:   "Runtime",
@@ -115,8 +115,9 @@ func registerRuntimeCommands(root *cobra.Command) {
 
 func newRuntimeAliasCommand(name string) *cobra.Command {
 	command := &cobra.Command{
-		Use:   name,
-		Short: fmt.Sprintf("Manage %s runtime", name),
+		Use:    name,
+		Short:  fmt.Sprintf("Manage %s runtime", name),
+		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRuntimeCurrent(cmd, name)
 		},

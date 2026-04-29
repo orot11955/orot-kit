@@ -14,9 +14,9 @@ import (
 )
 
 func registerFileCommands(root *cobra.Command) {
-	root.AddCommand(newListAliasCommand(".", "."))
-	root.AddCommand(newListAliasCommand("..", ".."))
-	root.AddCommand(newListAliasCommand("...", "../.."))
+	root.AddCommand(hiddenCommand(newListAliasCommand(".", ".")))
+	root.AddCommand(hiddenCommand(newListAliasCommand("..", "..")))
+	root.AddCommand(hiddenCommand(newListAliasCommand("...", "../..")))
 	root.AddCommand(newLSCommand())
 	root.AddCommand(newTreeCommand())
 	root.AddCommand(newSizeCommand())
@@ -98,10 +98,10 @@ func newSizeCommand() *cobra.Command {
 			}
 			command := runner.External("du", "-sh", target)
 			if opts.dryRun {
-				return writeDryRun(cmd, "Size", []runner.Command{command}, []string{"kit ls", "kit clean"})
+				return writeDryRun(cmd, "Size", []runner.Command{command}, []string{"kit ls", "kit resource disk"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Size", "Disk usage summary.", []runner.Result{result}, []string{"kit ls", "kit clean"})
+			return writeRunnerResults(cmd, "Size", "Disk usage summary.", []runner.Result{result}, []string{"kit ls", "kit resource disk"})
 		},
 	}
 }
@@ -112,7 +112,7 @@ func newFindCommand() *cobra.Command {
 	var fileType string
 	command := &cobra.Command{
 		Use:   "find [pattern] [root]",
-		Short: "Find files with a guided builder when values are missing",
+		Short: "Find files",
 		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 && name == "" {
@@ -185,10 +185,10 @@ func newFindCommand() *cobra.Command {
 				summary += "\nPermission errors are hidden for root searches."
 			}
 			if opts.dryRun {
-				return writeDryRun(cmd, "Find Files", []runner.Command{command}, []string{"kit ls", "kit grep"})
+				return writeDryRun(cmd, "Find Files", []runner.Command{command}, []string{"kit ls", "kit tree"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Find Files", summary, []runner.Result{result}, []string{"kit ls", "kit grep"})
+			return writeRunnerResults(cmd, "Find Files", summary, []runner.Result{result}, []string{"kit ls", "kit tree"})
 		},
 	}
 	command.Flags().StringVar(&rootPath, "root", ".", "search root")

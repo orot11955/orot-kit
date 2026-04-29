@@ -18,14 +18,26 @@ import (
 )
 
 func registerNetworkCommands(root *cobra.Command) {
-	root.AddCommand(newNetworkCommand())
-	root.AddCommand(newIPCommand())
-	root.AddCommand(newPingCommand())
-	root.AddCommand(newDigCommand())
-	root.AddCommand(newCurlCommand())
-	root.AddCommand(newDownloadCommand())
-	root.AddCommand(newPortCommand())
-	root.AddCommand(newTCPDumpCommand())
+	network := newNetworkCommand()
+	addNetworkSubcommands(network)
+	root.AddCommand(network)
+	root.AddCommand(hiddenCommand(newIPCommand()))
+	root.AddCommand(hiddenCommand(newPingCommand()))
+	root.AddCommand(hiddenCommand(newDigCommand()))
+	root.AddCommand(hiddenCommand(newCurlCommand()))
+	root.AddCommand(hiddenCommand(newDownloadCommand()))
+	root.AddCommand(hiddenCommand(newPortCommand()))
+	root.AddCommand(hiddenCommand(newTCPDumpCommand()))
+}
+
+func addNetworkSubcommands(command *cobra.Command) {
+	command.AddCommand(newIPCommand())
+	command.AddCommand(newPingCommand())
+	command.AddCommand(newDigCommand())
+	command.AddCommand(newCurlCommand())
+	command.AddCommand(newDownloadCommand())
+	command.AddCommand(newPortCommand())
+	command.AddCommand(newTCPDumpCommand())
 }
 
 func newNetworkCommand() *cobra.Command {
@@ -35,7 +47,7 @@ func newNetworkCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			commands := networkCommands()
 			if opts.dryRun {
-				return writeDryRun(cmd, "Network Summary", commands, []string{"kit ip", "kit port", "kit ping"})
+				return writeDryRun(cmd, "Network Summary", commands, []string{"kit network ip", "kit network port", "kit network ping <host>"})
 			}
 			results := runner.RunMany(context.Background(), commands)
 			system := detect.System()
@@ -46,7 +58,7 @@ func newNetworkCommand() *cobra.Command {
 			if interfaces, err := detect.Interfaces(); err == nil {
 				summary += fmt.Sprintf("\nInterfaces: %d detected", len(interfaces))
 			}
-			return writeRunnerResults(cmd, "Network Summary", summary, results, []string{"kit ip", "kit port", "kit ping"})
+			return writeRunnerResults(cmd, "Network Summary", summary, results, []string{"kit network ip", "kit network port", "kit network ping <host>"})
 		},
 	}
 }
@@ -103,10 +115,10 @@ func newPingCommand() *cobra.Command {
 			}
 			command := runner.External("ping", countFlag, strconv.Itoa(count), args[0])
 			if opts.dryRun {
-				return writeDryRun(cmd, "Ping", []runner.Command{command}, []string{"kit network", "kit dig"})
+				return writeDryRun(cmd, "Ping", []runner.Command{command}, []string{"kit network", "kit network dig <name>"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Ping", "Connectivity probe.", []runner.Result{result}, []string{"kit network", "kit dig"})
+			return writeRunnerResults(cmd, "Ping", "Connectivity probe.", []runner.Result{result}, []string{"kit network", "kit network dig <name>"})
 		},
 	}
 	command.Flags().IntVar(&count, "count", 4, "packet count")
@@ -124,10 +136,10 @@ func newDigCommand() *cobra.Command {
 				command = runner.External("nslookup", args[0])
 			}
 			if opts.dryRun {
-				return writeDryRun(cmd, "DNS Lookup", []runner.Command{command}, []string{"kit network", "kit ping"})
+				return writeDryRun(cmd, "DNS Lookup", []runner.Command{command}, []string{"kit network", "kit network ping <host>"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "DNS Lookup", "DNS resolution result.", []runner.Result{result}, []string{"kit network", "kit ping"})
+			return writeRunnerResults(cmd, "DNS Lookup", "DNS resolution result.", []runner.Result{result}, []string{"kit network", "kit network ping <host>"})
 		},
 	}
 }
@@ -175,7 +187,7 @@ func newDownloadCommand() *cobra.Command {
 				commands = append(commands, runner.External("chmod", "+x", outputPath))
 			}
 			if opts.dryRun {
-				return writeDryRun(cmd, "Download", commands, []string{"kit download <url> --sha256 <sum>", "kit curl <url>"})
+				return writeDryRun(cmd, "Download", commands, []string{"kit network download <url> --sha256 <sum>", "kit network curl <url>"})
 			}
 
 			results := []runner.Result{runner.Run(context.Background(), downloadCommand)}
@@ -193,7 +205,7 @@ func newDownloadCommand() *cobra.Command {
 			if verified {
 				summary += "\nSHA256: verified"
 			}
-			return writeRunnerResults(cmd, "Download", summary, results, []string{"kit curl " + url})
+			return writeRunnerResults(cmd, "Download", summary, results, []string{"kit network curl " + url})
 		},
 	}
 	command.Flags().StringVarP(&outputPath, "output", "o", "", "output file path")
@@ -233,10 +245,10 @@ func newPortCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			command := portListCommand()
 			if opts.dryRun {
-				return writeDryRun(cmd, "Listening Ports", []runner.Command{command}, []string{"kit port kill <pid>"})
+				return writeDryRun(cmd, "Listening Ports", []runner.Command{command}, []string{"kit network port kill <pid>"})
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Listening Ports", "Open listening sockets and owning processes when available.", []runner.Result{result}, []string{"kit port kill <pid>"})
+			return writeRunnerResults(cmd, "Listening Ports", "Open listening sockets and owning processes when available.", []runner.Result{result}, []string{"kit network port kill <pid>"})
 		},
 	}
 	command.AddCommand(newPortKillCommand())
@@ -261,7 +273,7 @@ func newPortKillCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			command := runner.External("kill", "-9", args[0])
 			if opts.dryRun {
-				return writeDryRun(cmd, "Port Kill", []runner.Command{command}, []string{"kit port"})
+				return writeDryRun(cmd, "Port Kill", []runner.Command{command}, []string{"kit network port"})
 			}
 			if !opts.yes {
 				ok, err := confirmExecution(cmd, "Port Kill", command, "프로세스를 강제로 종료합니다.", false)
@@ -273,7 +285,7 @@ func newPortKillCommand() *cobra.Command {
 				}
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "Port Kill", "Process kill requested.", []runner.Result{result}, []string{"kit port"})
+			return writeRunnerResults(cmd, "Port Kill", "Process kill requested.", []runner.Result{result}, []string{"kit network port"})
 		},
 	}
 }
@@ -288,7 +300,7 @@ func newTCPDumpCommand() *cobra.Command {
 	var count int
 	command := &cobra.Command{
 		Use:   "tcpdump",
-		Short: "Build and run a tcpdump capture",
+		Short: "Capture packets with tcpdump",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if iface == "" {
 				selected, err := selectInterface(cmd)
@@ -350,7 +362,7 @@ func newTCPDumpCommand() *cobra.Command {
 			}
 			command := runner.Shell(strings.Join(parts, " "))
 			if opts.dryRun {
-				return writeDryRun(cmd, "TCP Packet Capture", []runner.Command{command}, []string{"kit network", "kit port"})
+				return writeDryRun(cmd, "TCP Packet Capture", []runner.Command{command}, []string{"kit network", "kit network port"})
 			}
 			if !opts.yes {
 				ok, err := confirmExecution(cmd, "TCP Packet Capture", command, "This command requires sudo.", true)
@@ -362,7 +374,7 @@ func newTCPDumpCommand() *cobra.Command {
 				}
 			}
 			result := runner.Run(context.Background(), command)
-			return writeRunnerResults(cmd, "TCP Packet Capture", "Packet capture finished or stopped.", []runner.Result{result}, []string{"kit network", "kit port"})
+			return writeRunnerResults(cmd, "TCP Packet Capture", "Packet capture finished or stopped.", []runner.Result{result}, []string{"kit network", "kit network port"})
 		},
 	}
 	command.Flags().StringVarP(&iface, "interface", "i", "", "network interface")

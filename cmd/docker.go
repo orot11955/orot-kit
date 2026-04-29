@@ -25,7 +25,7 @@ func registerDockerCommands(root *cobra.Command) {
 	options := &dockerOptions{tail: 100}
 	docker := &cobra.Command{
 		Use:   "docker",
-		Short: "Common Docker and Docker Compose tasks",
+		Short: "Manage Docker tasks",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDockerPS(cmd, options)
 		},
